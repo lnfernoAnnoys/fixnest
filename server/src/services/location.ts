@@ -2,23 +2,15 @@ import { db } from '../db/connection.js'
 import { badRequest } from '../lib/errors.js'
 
 /**
- * Students type their hostel name and room number. The names are matched against the hostels that already exist
- * (ignoring capitals, spaces and punctuation), and a new hostel or room is added only when nothing matches.
- * The limits stop a stream of made-up names from filling the lists.
+ * Students choose their hostel from the list the admin keeps, and type their room number. The hostel is matched
+ * against the real hostels (ignoring capitals, spaces and punctuation) and a student can never add one: only the admin
+ * does that, in Setup. A room that does not exist yet is added to the chosen hostel. The limit stops a stream of
+ * made-up room numbers from filling the list.
  */
-const MAX_HOSTELS = 20
 const MAX_ROOMS_PER_HOSTEL = 1000
 
 /** "Boys Hostel-1", "boys hostel 1" and "BOYSHOSTEL1" are the same hostel. */
 const sameName = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '')
-
-export function cleanHostelName(input: string): string {
-  const t = input.trim().replace(/\s+/g, ' ')
-  if (t.length < 2 || t.length > 60) throw badRequest('Enter your hostel name (2 to 60 characters).', 'VALIDATION')
-  if (!/^[A-Za-z0-9][A-Za-z0-9 .,'&()/-]*$/.test(t)) throw badRequest('Use only letters, digits and spaces in the hostel name.', 'VALIDATION')
-  // "boys hostel 1" is tidied to "Boys Hostel 1"; names typed with capitals are left as they are.
-  return t === t.toLowerCase() ? t.replace(/\b[a-z]/g, (c) => c.toUpperCase()) : t
-}
 
 /** Room numbers may contain letters, like M423. They are stored in capitals without spaces. */
 export function cleanRoomNumber(input: string): string {
@@ -33,15 +25,21 @@ function guessFloor(number: string): number {
   return digits.length >= 3 ? Math.min(50, Number(digits.slice(0, -2))) : 0
 }
 
-export function findOrCreateHostel(text: string): number {
-  const name = cleanHostelName(text)
-  const hostels = db.prepare('SELECT id, name FROM hostels').all() as unknown as { id: number; name: string }[]
-  const hit = hostels.find((h) => sameName(h.name) === sameName(name))
+/** "Mithila" or "Mithila or Vikramshila" or "A, B or C": for messages. */
+function sayList(names: string[]): string {
+  return names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}`
+}
+
+/** The hostel a student named, matched against the real ones. It never creates a hostel. */
+export function findHostel(text: string): number {
+  const hostels = db.prepare('SELECT id, name FROM hostels ORDER BY name').all() as unknown as { id: number; name: string }[]
+  const typed = sameName(text)
+  const hit = typed ? hostels.find((h) => sameName(h.name) === typed) : undefined
   if (hit) return hit.id
-  if (hostels.length >= MAX_HOSTELS) {
-    throw badRequest("We don't know that hostel. Check the name, or ask the warden to add it.", 'UNKNOWN_HOSTEL')
-  }
-  return Number(db.prepare('INSERT INTO hostels (name) VALUES (?)').run(name).lastInsertRowid)
+  throw badRequest(
+    hostels.length ? `We don't know that hostel. Choose ${sayList(hostels.map((h) => h.name))}.` : 'No hostels have been set up yet. Please ask the hostel office.',
+    'UNKNOWN_HOSTEL',
+  )
 }
 
 export function findOrCreateRoom(hostelId: number, text: string): number {
@@ -58,7 +56,7 @@ export function findOrCreateRoom(hostelId: number, text: string): number {
 /** Turns what a student typed (or picked) into a hostel and room that exist. Call inside a transaction. */
 export function resolveLocation(input: { hostelName?: string; roomNumber?: string; hostelId?: number; roomId?: number }): { hostelId: number; roomId: number } {
   if (input.hostelName !== undefined && input.roomNumber !== undefined) {
-    const hostelId = findOrCreateHostel(input.hostelName)
+    const hostelId = findHostel(input.hostelName)
     return { hostelId, roomId: findOrCreateRoom(hostelId, input.roomNumber) }
   }
   if (input.hostelId && input.roomId) {
@@ -71,14 +69,20 @@ export function resolveLocation(input: { hostelName?: string; roomNumber?: strin
 }
 
 /**
- * Someone who signs up with a typed hostel and room does not get them added to the lists until their email is
- * verified, so unverified sign-ups cannot create hostels. Call this whenever a student's email becomes verified.
+ * Someone who signs up with a hostel and a typed room does not get the room added to the list until their email is
+ * verified, so unverified sign-ups cannot fill it with made-up rooms. Call this whenever a student's email becomes verified.
  */
 export function finalizeStudentLocation(userId: number) {
   const p = db.prepare('SELECT pending_hostel AS hostel, pending_room AS room FROM student_profiles WHERE user_id = ?').get(userId) as unknown as
     | { hostel: string | null; room: string | null }
     | undefined
   if (!p?.hostel || !p.room) return
-  const { hostelId, roomId } = resolveLocation({ hostelName: p.hostel, roomNumber: p.room })
-  db.prepare('UPDATE student_profiles SET hostel_id = ?, room_id = ?, pending_hostel = NULL, pending_room = NULL WHERE user_id = ?').run(hostelId, roomId, userId)
+  try {
+    const { hostelId, roomId } = resolveLocation({ hostelName: p.hostel, roomNumber: p.room })
+    db.prepare('UPDATE student_profiles SET hostel_id = ?, room_id = ?, pending_hostel = NULL, pending_room = NULL WHERE user_id = ?').run(hostelId, roomId, userId)
+  } catch (e) {
+    // The hostel was removed between sign-up and confirming the email. Don't block the confirmation: they can pick
+    // their hostel and room again later.
+    console.warn('[location] could not place a new student:', e instanceof Error ? e.message : e)
+  }
 }

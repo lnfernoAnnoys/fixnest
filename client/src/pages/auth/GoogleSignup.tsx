@@ -33,7 +33,7 @@ export default function GoogleSignup() {
     e.preventDefault()
     setFormError(null)
     const next = {
-      hostel: hostelName.trim().length >= 2 ? undefined : 'Type your hostel name.',
+      hostel: hostelName.trim().length >= 2 ? undefined : 'Choose your hostel.',
       room: /^[A-Za-z0-9-]{1,10}$/.test(roomNumber.replace(/\s+/g, '')) ? undefined : 'Type your room number, like 302 or M423.',
     }
     setErrors(next)

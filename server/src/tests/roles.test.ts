@@ -209,28 +209,31 @@ describe('nobody can delete a complaint', () => {
   })
 })
 
-describe('students type their hostel name and room number', () => {
+describe('students choose their hostel and type their room number', () => {
   const register = (over: Record<string, unknown>) =>
     call('POST', '/auth/register', null, { name: 'Typed Student', email: 'typed@students.isquareit.edu.in', password: 'Password123', ...over })
   const hostels = () => (db.prepare('SELECT name FROM hostels ORDER BY id').all() as any[]).map((h) => h.name)
+  const rooms = () => (db.prepare('SELECT COUNT(*) AS n FROM rooms').get() as any).n as number
 
-  it('a room number may contain letters, like M423, and is stored in capitals', async () => {
+  it('a room number may contain letters, like M423; it is stored in capitals and added to the chosen hostel', async () => {
     outbox = []
-    const before = hostels().length
-    const r = await register({ hostelName: 'boys hostel 2', roomNumber: 'm 423' })
+    const hostelsBefore = hostels()
+    const roomsBefore = rooms()
+    const r = await register({ hostelName: 'boys hostel 1', roomNumber: 'm 423' })
     assert.equal(r.status, 201)
-    assert.equal(hostels().length, before, 'nothing is added to the lists until the email is verified')
+    assert.equal(rooms(), roomsBefore, 'the room joins the list only once the email is verified')
     const code = outbox[0].text.match(/\b(\d{6})\b/)![1]
     const v = await call('POST', '/auth/verify-email', null, { email: 'typed@students.isquareit.edu.in', code })
     assert.equal(v.status, 200)
-    assert.equal(v.json.user.hostelName, 'Boys Hostel 2', 'a hostel typed in lower case is tidied')
+    assert.equal(v.json.user.hostelName, 'Boys Hostel 1', 'matched to the real hostel')
     assert.equal(v.json.user.roomNumber, 'M423')
-    assert.equal(hostels().length, before + 1)
-    const room = db.prepare("SELECT r.floor FROM rooms r JOIN hostels h ON h.id = r.hostel_id WHERE r.number = 'M423' AND h.name = 'Boys Hostel 2'").get() as any
+    assert.equal(rooms(), roomsBefore + 1)
+    assert.deepEqual(hostels(), hostelsBefore, 'no hostel was added')
+    const room = db.prepare("SELECT r.floor FROM rooms r JOIN hostels h ON h.id = r.hostel_id WHERE r.number = 'M423' AND h.name = 'Boys Hostel 1'").get() as any
     assert.equal(room.floor, 4, 'the floor is worked out from the number')
   })
 
-  it('matches an existing hostel however it is typed, instead of making a duplicate', async () => {
+  it('matches the hostel however it is typed, instead of making a duplicate', async () => {
     const before = hostels().length
     for (const [i, name] of ['BOYS HOSTEL 1', 'boys-hostel 1', 'Boys  Hostel 1 '].entries()) {
       outbox = []
@@ -244,10 +247,14 @@ describe('students type their hostel name and room number', () => {
     assert.equal(hostels().length, before)
   })
 
-  it('an unverified sign-up never adds a hostel', async () => {
-    const before = hostels().length
-    assert.equal((await register({ email: 'ghost@students.isquareit.edu.in', hostelName: 'Made Up Hostel', roomNumber: '1' })).status, 201)
-    assert.equal(hostels().length, before)
+  it('a student can never add a hostel: an unknown name is refused at sign-up, and the real names are listed', async () => {
+    const before = hostels()
+    const r = await register({ email: 'ghost@students.isquareit.edu.in', hostelName: 'Made Up Hostel', roomNumber: '1' })
+    assert.equal(r.status, 400)
+    assert.equal(r.json.code, 'UNKNOWN_HOSTEL')
+    assert.ok(r.json.error.includes('Boys Hostel 1'), r.json.error)
+    assert.deepEqual(hostels(), before)
+    assert.equal(db.prepare("SELECT 1 FROM users WHERE email = 'ghost@students.isquareit.edu.in'").get(), undefined, 'no account was started')
   })
 
   it('refuses rubbish for a hostel name or room number', async () => {
@@ -258,7 +265,7 @@ describe('students type their hostel name and room number', () => {
     assert.equal((await register({ email: 'bad5@students.isquareit.edu.in' })).status, 400, 'a location is required')
   })
 
-  it('a student reports a problem in another room or a common area by typing the hostel and room', async () => {
+  it('a student reports a problem in another room or a common area by choosing the hostel', async () => {
     const other = await newComplaint({ hostelName: 'boys hostel 1', roomNumber: 'b-204' })
     assert.equal(other.status, 201)
     assert.equal(other.json.complaint.location.room, 'B-204')
@@ -270,10 +277,26 @@ describe('students type their hostel name and room number', () => {
     assert.equal((await newComplaint({ hostelName: 'Boys Hostel 1' })).status, 400, 'a common area needs a description of the place')
   })
 
-  it('caps how many hostels and rooms typed names can create', async () => {
-    for (let i = 0; i < 40; i++) db.prepare('INSERT OR IGNORE INTO hostels (name) VALUES (?)').run(`Filler ${i}`)
-    const r = await newComplaint({ hostelName: 'Brand New Block', locationNote: 'Corridor' })
-    assert.equal(r.status, 400)
-    assert.equal(r.json.code, 'UNKNOWN_HOSTEL')
+  it('the same rule holds when filing a complaint: an unknown hostel is refused', async () => {
+    const before = hostels()
+    const cases: Record<string, string>[] = [{ hostelName: 'Brand New Block', locationNote: 'Corridor' }, { hostelName: 'Brand New Block', roomNumber: '101' }]
+    for (const fields of cases) {
+      const r = await newComplaint(fields)
+      assert.equal(r.status, 400)
+      assert.equal(r.json.code, 'UNKNOWN_HOSTEL')
+    }
+    assert.deepEqual(hostels(), before)
+  })
+
+  it('someone whose hostel was removed before they confirmed their email can still confirm it', async () => {
+    outbox = []
+    const hostelId = Number(db.prepare("INSERT INTO hostels (name) VALUES ('Temporary Block')").run().lastInsertRowid)
+    const email = 'orphan@students.isquareit.edu.in'
+    assert.equal((await register({ email, hostelName: 'Temporary Block', roomNumber: '7' })).status, 201)
+    db.prepare('DELETE FROM hostels WHERE id = ?').run(hostelId)
+    const code = outbox[0].text.match(/\b(\d{6})\b/)![1]
+    const v = await call('POST', '/auth/verify-email', null, { email, code })
+    assert.equal(v.status, 200, 'the confirmation is not blocked')
+    assert.equal(v.json.user.hostelName, null, 'they simply have no room yet')
   })
 })

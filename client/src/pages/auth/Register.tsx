@@ -32,7 +32,7 @@ export default function Register() {
     if (!/^\S+@\S+\.\S+$/.test(email)) e.email = 'Enter a valid email address.'
     else if (!email.endsWith('@' + COLLEGE_EMAIL_DOMAIN)) e.email = `Use your college email (@${COLLEGE_EMAIL_DOMAIN}).`
     if (form.password.length < 8) e.password = 'Use at least 8 characters.'
-    if (form.hostelName.trim().length < 2) e.hostel = 'Type your hostel name.'
+    if (form.hostelName.trim().length < 2) e.hostel = 'Choose your hostel.'
     if (!/^[A-Za-z0-9-]{1,10}$/.test(form.roomNumber.replace(/\s+/g, ''))) e.room = 'Type your room number, like 302 or M423.'
     return e
   }

@@ -53,6 +53,7 @@ async function signUpByEmail(email: string, name: string) {
 before(async () => {
   migrate()
   ensureBaseData()
+  db.prepare("INSERT INTO hostels (name) VALUES ('Boys Hostel 1')").run()
   server = createApp().listen(0)
   base = `http://localhost:${(server.address() as AddressInfo).port}/api`
   setMailSink((m) => {

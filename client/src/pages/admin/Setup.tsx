@@ -135,7 +135,7 @@ function RoomsPanel() {
         <Button onClick={() => setNewHostel(true)}>Add hostel</Button>
       </div>
 
-      {all.length === 0 && <EmptyState title="No hostels yet" body="Add your hostels. Students pick from them as they type, and rooms appear as students sign up." action={<Button onClick={() => setNewHostel(true)}>Add hostel</Button>} />}
+      {all.length === 0 && <EmptyState title="No hostels yet" body="Add your hostels. Students can only choose from these, so nobody can make up a hostel. Rooms appear as students sign up." action={<Button onClick={() => setNewHostel(true)}>Add hostel</Button>} />}
 
       {all.map((h) => {
         const floors = [...new Set(h.rooms.map((r) => r.floor))].sort((a, b) => a - b)

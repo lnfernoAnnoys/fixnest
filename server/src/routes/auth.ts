@@ -9,7 +9,7 @@ import { hashPassword, randomToken, sha256, verifyPassword } from '../lib/securi
 import { parse } from '../lib/validate.js'
 import { COOKIE, requireAuth, setSessionCookie, type Role } from '../middleware/auth.js'
 import { safePicture, verifyGoogleCredential } from '../services/google.js'
-import { cleanHostelName, cleanRoomNumber, finalizeStudentLocation, resolveLocation } from '../services/location.js'
+import { cleanRoomNumber, finalizeStudentLocation, findHostel, resolveLocation } from '../services/location.js'
 import { avatarUrlFor, nextRoomChangeAt } from '../services/profile.js'
 import { sendWelcomeIfNew } from '../services/welcome.js'
 import { assertNotLocked, clearFailures, recordFailure } from '../services/loginGuard.js'
@@ -98,9 +98,11 @@ router.post('/register', async (req, res) => {
       'EMAIL_DOMAIN',
     )
   }
-  // A typed hostel and room are only checked for now; they join the lists once the email is verified.
+  // The hostel must be one of the real ones (checked now, so they hear at once). A typed room is only checked for now
+  // and joins the list once the email is verified.
   const typed = body.hostelName !== undefined && body.roomNumber !== undefined
-  const pending = typed ? { hostel: cleanHostelName(body.hostelName!), room: cleanRoomNumber(body.roomNumber!) } : null
+  if (typed) findHostel(body.hostelName!)
+  const pending = typed ? { hostel: body.hostelName!.trim(), room: cleanRoomNumber(body.roomNumber!) } : null
   const known = typed ? null : resolveLocation({ hostelId: body.hostelId, roomId: body.roomId })
 
   const existing = findByEmail(body.email)

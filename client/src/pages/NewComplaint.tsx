@@ -20,7 +20,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Field, FormError } from '@/components/Field'
-import { HostelInput, LocationFields } from '@/components/LocationFields'
+import { HostelSelect, LocationFields } from '@/components/LocationFields'
 import { PageHeader } from '@/components/states'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -143,8 +143,8 @@ export default function NewComplaint() {
     const e: Record<string, string> = {}
     if (!categoryId) e.category = 'Pick what kind of problem it is.'
     if (description.trim().length < 10) e.description = 'Describe the problem in at least 10 characters.'
-    if (mode === 'other' && (!otherHostel.trim() || !otherRoom.trim())) e.location = 'Type the hostel name and room number.'
-    if (mode === 'common' && (!commonHostel.trim() || !commonNote.trim())) e.location = 'Type the hostel name and say where it is.'
+    if (mode === 'other' && (!otherHostel.trim() || !otherRoom.trim())) e.location = 'Choose the hostel and type the room number.'
+    if (mode === 'common' && (!commonHostel.trim() || !commonNote.trim())) e.location = 'Choose the hostel and say where it is.'
     setErrors(e)
     if (Object.keys(e).length) {
       document.querySelector('[data-error="true"]')?.scrollIntoView({ block: 'center', behavior: 'smooth' })
@@ -210,7 +210,7 @@ export default function NewComplaint() {
           )}
           {mode === 'common' && (
             <div className="space-y-3" data-error={!!errors.location}>
-              <HostelInput value={commonHostel} onChange={setCommonHostel} />
+              <HostelSelect value={commonHostel} onChange={setCommonHostel} />
               <Input aria-label="Where exactly" placeholder="e.g. 2nd floor washroom, mess hall" maxLength={120} value={commonNote} onChange={(e) => setCommonNote(e.target.value)} />
             </div>
           )}

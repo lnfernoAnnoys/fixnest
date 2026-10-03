@@ -22,7 +22,7 @@ import {
   toComplaint,
 } from '../services/complaints.js'
 import { notify, notifyAdmins } from '../services/notify.js'
-import { findOrCreateHostel, resolveLocation } from '../services/location.js'
+import { findHostel, resolveLocation } from '../services/location.js'
 import { imageUpload, mediaUpload, saveImage, saveMedia } from '../services/uploads.js'
 
 const router = Router()
@@ -175,7 +175,7 @@ router.post('/', requireRole('student'), createLimiter, limitConcurrentUploads, 
     // Common area (corridor, washroom, mess...): needs a hostel and a description of the place.
     if (body.hostelId && !db.prepare('SELECT 1 FROM hostels WHERE id=?').get(body.hostelId)) throw badRequest('Choose a valid hostel.', 'VALIDATION')
     if (!locationNote) throw badRequest('Say where the problem is, for example "2nd floor washroom".', 'VALIDATION')
-    hostelId = body.hostelId ?? findOrCreateHostel(body.hostelName!)
+    hostelId = body.hostelId ?? findHostel(body.hostelName!)
   } else {
     const profile = db.prepare('SELECT hostel_id, room_id FROM student_profiles WHERE user_id=?').get(user.id) as unknown as
       | { hostel_id: number | null; room_id: number | null }

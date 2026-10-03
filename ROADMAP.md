@@ -19,7 +19,7 @@ Each phase ends with a working, tested slice. Nothing moves on until the current
 - [x] Complaint API: create, list own, detail with timeline, cancel, add info
 - [x] Complaint IDs (`HST-1042`), status history rows on every change
 - [x] Photo upload: MIME whitelist, 5 MB cap, generated filenames, authorized file route
-- [x] ~~QR: `/r/:token` resolves to hostel/floor/room~~ (removed later: students type their hostel and room instead)
+- [x] ~~QR: `/r/:token` resolves to hostel/floor/room~~ (removed later: students choose their hostel and type their room instead)
 - [x] In-app notifications (`notify()` service, unread count, mark read)
 - [x] UI: app shell, login/register, **mobile-first complaint form**, my complaints, complaint detail + status timeline, notification bell
 - [x] ~~Scanner~~ (removed)
@@ -54,7 +54,7 @@ Each phase ends with a working, tested slice. Nothing moves on until the current
 - [x] Welcome email for new students (designed HTML + text, sent once)
 - [x] Room QR codes removed completely (pages, API, labels, database column)
 - [x] Four roles: student, staff, warden, admin (warden cannot change setup or manage wardens); nobody can delete a complaint
-- [x] Students type their hostel name and room number (letters allowed); matched to existing hostels, capped
+- [x] Students choose their hostel from the admin's list and type their room number (letters allowed); only the admin can add a hostel
 - [x] Active devices in Settings (log one out, or all others); mobile number (unverified)
 
 ## Decisions (confirmed)

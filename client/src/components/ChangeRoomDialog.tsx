@@ -9,7 +9,7 @@ import { api, errorMessage } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import type { User } from '@/lib/types'
 
-/** A student types their new hostel name and room number. The server enforces the waiting period. */
+/** A student chooses their new hostel and types their room number. The server enforces the waiting period. */
 export function ChangeRoomDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { user, setUser } = useAuth()
   const [hostelName, setHostelName] = useState(user?.hostelName ?? '')
@@ -19,7 +19,7 @@ export function ChangeRoomDialog({ open, onClose }: { open: boolean; onClose: ()
 
   async function submit(e: FormEvent) {
     e.preventDefault()
-    if (hostelName.trim().length < 2 || !/^[A-Za-z0-9-]{1,10}$/.test(roomNumber.replace(/\s+/g, ''))) return setError('Type your hostel name and room number, like Boys Hostel 1 and M423.')
+    if (hostelName.trim().length < 2 || !/^[A-Za-z0-9-]{1,10}$/.test(roomNumber.replace(/\s+/g, ''))) return setError('Choose your hostel and type your room number, like M423.')
     setBusy(true)
     setError(null)
     try {

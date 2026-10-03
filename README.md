@@ -50,7 +50,7 @@ pictures and the video are made-up demo data.*
 | A welcome email when a student's account is ready (designed HTML, with a plain-text twin) | ✓ | | | |
 | Email notifications on every update (can be switched off in Settings) | ✓ | ✓ | ✓ | ✓ |
 | Report a problem: location, category, description, photo or short video, priority (High and Urgent ask "are you sure?" first) | ✓ | | | |
-| Type your own hostel name and room number (letters allowed, like M423) | ✓ | | | |
+| Choose your hostel from the admin's list and type your room number (letters allowed, like M423); students cannot invent a hostel | ✓ | | | |
 | Change your hostel or room (once every 30 days) | ✓ | | | |
 | Upload or remove your own profile picture | ✓ | ✓ | ✓ | ✓ |
 | Add a mobile number (not verified) | ✓ | ✓ | ✓ | ✓ |
@@ -84,7 +84,7 @@ Urgent 24 h, High 48 h, Medium 72 h, Low 7 days.
 | Auth | Password (bcrypt) or Google, JWT in an `httpOnly` cookie |
 | Web app | React 19, Vite, TypeScript, Tailwind CSS v4, React Router, TanStack Query |
 | UI | shadcn/ui (Base UI) components, Icons8 icons, charts built for this project |
-| Tests | Node's built-in test runner (`node:test`): 201 tests |
+| Tests | Node's built-in test runner (`node:test`): 202 tests |
 
 SQLite is a deliberate choice: one hostel means one small, easy-to-back-up file with no database server to run.
 

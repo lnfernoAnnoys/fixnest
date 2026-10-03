@@ -228,7 +228,7 @@ Log in as that admin, then:
 1. **Setup → Add hostel**, once for each real hostel (your 2 boys' and 2 girls' hostels).
 2. **People → Wardens → Add warden** for each warden.
 3. **People → Maintenance staff → Add staff member** for the electricians, plumbers and so on.
-4. **Setup → Categories**: check the list. Rooms appear by themselves as students sign up and type their room.
+4. **Setup → Categories**: check the list. Students can only choose the hostels you added in step 1, so add all of them first; rooms appear by themselves as students sign up and type their room.
 
 Never run `npm run seed` on the server. It refuses to, because it creates demo accounts with a public password.
 
