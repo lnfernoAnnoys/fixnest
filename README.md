@@ -306,3 +306,7 @@ The full step-by-step guide (an Azure server, Caddy for HTTPS, systemd, email, b
 ## Credits
 
 Icons by [Icons8](https://icons8.com). Interface components from shadcn/ui.
+
+## Licence
+
+[MIT](LICENSE) © 2026 Aditya Bhosale.
