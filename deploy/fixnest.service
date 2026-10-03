@@ -1,0 +1,26 @@
+# Copy to /etc/systemd/system/fixnest.service on the server, then:
+#   systemctl daemon-reload && systemctl enable --now fixnest
+# Settings (secrets, domain, port, email) are read from /opt/fixnest/app/server/.env.
+# It runs with its own copy of Node 24 in /opt/fixnest/node, so it never depends on (or disturbs) any other Node on the machine.
+
+[Unit]
+Description=FixNest hostel maintenance tracker
+After=network.target
+
+[Service]
+Type=simple
+User=fixnest
+Group=fixnest
+WorkingDirectory=/opt/fixnest/app/server
+Environment=NODE_ENV=production
+ExecStart=/opt/fixnest/node/bin/node --import tsx src/index.ts
+Restart=always
+RestartSec=3
+# Creates /var/lib/fixnest (the database and uploaded photos live there), owned by the fixnest user.
+StateDirectory=fixnest
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

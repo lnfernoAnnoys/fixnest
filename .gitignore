@@ -1,0 +1,33 @@
+node_modules
+dist
+*.db
+*.db-shm
+*.db-wal
+.env
+.env.*
+!.env.example
+server/uploads/*
+!server/uploads/.gitkeep
+.playwright-mcp
+
+backups/
+welcome-preview.html
+
+# local tool settings
+.mcp.json
+.claude/
+welcome-preview.html
+
+# Google Search Console ownership file for the live site (kept locally and on the server, not in the public history)
+client/public/google*.html
+
+# Any database file, backup or copy (they contain real accounts)
+*.db
+*.db-*
+*.db.*
+*.db.bak*
+*.bak
+*.bak-*
+*.sqlite
+*.sqlite3
+server/*.bak*

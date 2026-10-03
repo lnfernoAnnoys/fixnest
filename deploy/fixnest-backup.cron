@@ -1,0 +1,2 @@
+# Copy to /etc/cron.d/fixnest-backup on the server. Saves the database and the uploads every night at 02:30.
+30 2 * * * fixnest cd /opt/fixnest/app/server && /opt/fixnest/node/bin/node --import tsx src/backup.ts >> /var/log/fixnest-backup.log 2>&1

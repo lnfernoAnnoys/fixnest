@@ -1,0 +1,11 @@
+# Copy to /etc/caddy/Caddyfile on the server, then:  systemctl reload caddy
+# Caddy gets and renews the HTTPS certificate by itself once the domain points at this server and ports 80/443 are open.
+
+www.your-domain.example {
+	redir https://your-domain.example{uri} permanent
+}
+
+your-domain.example {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:3001
+}
